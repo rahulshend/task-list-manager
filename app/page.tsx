@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import TaskList from './components/TaskList'
 import AddTaskForm from './components/AddTaskForm'
 import StatusFilter from './components/StatusFilter'
@@ -18,39 +18,45 @@ export default function TaskManager() {
     fetchTasks()
   }, [])
 
-  useEffect(() => {
-    filterAndSearchTasks()
-  }, [tasks, filter, searchTerm])
+  // useEffect(() => {
+  //   filterAndSearchTasks()
+  // }, [tasks, filter, searchTerm])
 
   const fetchTasks = async () => {
     try {
-      const response = await fetch('https://jsonplaceholder.typicode.com/todos')
-      const data = await response.json()
-      const formattedTasks = data.slice(0, 20).map((task: any) => ({
+      const response = await fetch("https://jsonplaceholder.typicode.com/todos");
+      const data: { id: number; title: string; completed: boolean }[] = await response.json();
+      const formattedTasks: Task[] = data.slice(0, 20).map((task) => ({
         id: task.id,
         title: task.title,
-        description: 'Click to edit description',
-        status: task.completed ? 'Done' : 'To Do'
-      }))
-      setTasks(formattedTasks)
+        description: "Click to edit description",
+        status: task.completed ? "Done" : "To Do", // Ensure status matches the `Task` type
+      }));
+      setTasks(formattedTasks); // This should no longer show an error
     } catch (error) {
-      console.error('Error fetching tasks:', error)
+      console.error("Error fetching tasks:", error);
     }
-  }
+  };  
+  
 
-  const filterAndSearchTasks = () => {
-    let result = tasks
-    if (filter !== 'all') {
-      result = result.filter(task => task.status === filter)
+  const filterAndSearchTasks = useCallback(() => {
+    let result = tasks;
+    if (filter !== "all") {
+      result = result.filter((task) => task.status === filter);
     }
     if (searchTerm) {
-      result = result.filter(task => 
-        task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        task.description.toLowerCase().includes(searchTerm.toLowerCase())
-      )
+      result = result.filter(
+        (task) =>
+          task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          task.description.toLowerCase().includes(searchTerm.toLowerCase())
+      );
     }
-    setFilteredTasks(result)
-  }
+    setFilteredTasks(result);
+  }, [tasks, filter, searchTerm]);
+  
+  useEffect(() => {
+    filterAndSearchTasks();
+  }, [filterAndSearchTasks]); // No more warnings here
 
   const addTask = (newTask: Task) => {
     setTasks([...tasks, newTask])
